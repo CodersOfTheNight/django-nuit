@@ -13,8 +13,22 @@ def _closure(fn):
         return fn.__closure__
 
 
+def _code(fn):
+    '''
+    Python 2 and Python 3 compatibility function
+    '''
+    try:
+        return fn.func_code
+    except AttributeError:
+        return fn.__code__
+
+
 def has_closure(fn):
     return hasattr(fn, 'func_closure') or hasattr(fn, '__closure__')
+
+
+def has_code(fn):
+    return hasattr(fn, 'func_code') or hasattr(fn, '__code__')
 
 
 def get_callable_cells(function):
@@ -48,7 +62,7 @@ def get_class_based_views(callable_cells):
     '''Find class based views for a set of cells.'''
     for cell in callable_cells:
         if has_closure(cell) and _closure(cell):
-            closure_dict = dict(zip(cell.func_code.co_freevars, _closure(cell)))
+            closure_dict = dict(zip(_code(cell).co_freevars, _closure(cell)))
             if 'cls' in closure_dict:
                 klass = closure_dict['cls'].cell_contents
                 if hasattr(klass, 'dispatch'):
@@ -79,9 +93,9 @@ def get_user_tests(function):
     callable_cells = get_callable_cells(function)
     return [
         x for x in callable_cells
-        if getattr(x, 'func_code', None) and (
-            x.func_code.co_varnames[0] in ["user", "u"] or
-            (len(x.func_code.co_varnames) > 1 and x.func_code.co_varnames[0] in ['self', 'cls'] and x.func_code.co_varnames[1] in ['u', 'user'])
+        if has_code(x) and (
+            _code(x).co_varnames[0] in ["user", "u"] or
+            (len(_code(x).co_varnames) > 1 and _code(x).co_varnames[0] in ['self', 'cls'] and _code(x).co_varnames[1] in ['u', 'user'])
         )
     ] + list(get_cbv_dispatch_tests(callable_cells))
 
@@ -90,8 +104,8 @@ def test_view(test, urlconf, user):
     '''
     Run a view test. Add in *args, **kwargs if appropriate.
     '''
-    args = [] if 'args' not in test.func_code.co_varnames else urlconf.args
-    kwargs = {} if 'kwargs' not in test.func_code.co_varnames else urlconf.kwargs
+    args = [] if 'args' not in _code(test).co_varnames else urlconf.args
+    kwargs = {} if 'kwargs' not in _code(test).co_varnames else urlconf.kwargs
     return test(user, *args, **kwargs)
 
 

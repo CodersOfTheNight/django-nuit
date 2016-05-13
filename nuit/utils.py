@@ -1,26 +1,15 @@
 '''Utils.'''
 
 from django.core.exceptions import PermissionDenied
+import six
 
 
 def _closure(fn):
-    '''
-    Python 2 and Python 3 compatibility function
-    '''
-    try:
-        return fn.func_closure
-    except AttributeError:
-        return fn.__closure__
+    return six.get_function_closure(fn)
 
 
 def _code(fn):
-    '''
-    Python 2 and Python 3 compatibility function
-    '''
-    try:
-        return fn.func_code
-    except AttributeError:
-        return fn.__code__
+    return six.get_function_code(fn)
 
 
 def has_closure(fn):

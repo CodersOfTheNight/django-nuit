@@ -8,11 +8,8 @@ from django.template.loader_tags import do_extends, ExtendsNode
 from django.template.defaultfilters import slugify
 from django.utils.html import format_html
 from ast import literal_eval
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
-
+from six.moves.urllib.parse import urlparse
+from six import iteritems as _iteritems
 from ..utils import user_can_see_view
 
 # pylint: disable=C0103
@@ -47,19 +44,6 @@ def set_active_menu(active_menu):
     to highlight the correct menu item.
     '''
     return format_html("<span style='display: none' class='nuit-active-menu'>{}</span>", active_menu)
-
-
-def _iteritems(kwargs):
-    '''
-    A compatibility layer between Python 2 and 3
-    >>> d = {"a": "b", "c": "d"}
-    >>> _iteritems(d)
-    [("a", "b"), ("c", "d")]
-    '''
-    try:
-        return kwargs.iteritems()
-    except AttributeError:
-        return kwargs.items()
 
 
 class ExtendNode(ExtendsNode):

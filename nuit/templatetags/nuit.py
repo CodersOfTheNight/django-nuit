@@ -8,7 +8,10 @@ from django.template.loader_tags import do_extends, ExtendsNode
 from django.template.defaultfilters import slugify
 from django.utils.html import format_html
 from ast import literal_eval
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 from ..utils import user_can_see_view
 

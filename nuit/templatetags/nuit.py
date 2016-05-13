@@ -49,6 +49,19 @@ def set_active_menu(active_menu):
     return format_html("<span style='display: none' class='nuit-active-menu'>{}</span>", active_menu)
 
 
+def _iteritems(kwargs):
+    '''
+    A compatibility layer between Python 2 and 3
+    >>> d = {"a": "b", "c": "d"}
+    >>> _iteritems(d)
+    [("a", "b"), ("c", "d")]
+    '''
+    try:
+        return kwargs.iteritems()
+    except AttributeError:
+        return kwargs.items()
+
+
 class ExtendNode(ExtendsNode):
     '''
     Template node that extends another template with additional variables.
@@ -56,13 +69,13 @@ class ExtendNode(ExtendsNode):
 
     def __init__(self, node, kwargs):
         super(ExtendNode, self).__init__(node.nodelist, node.parent_name, node.template_dirs)
-        self.kwargs = dict(("nuit_%s" % key, value) for key, value in kwargs.iteritems())
+        self.kwargs = dict(("nuit_%s" % key, value) for key, value in _iteritems(kwargs))
 
     def __repr__(self):
         return '<ExtendNode: extends %s with args: %r>' % (super(ExtendNode, self).__repr__(), self.kwargs)
 
     def render(self, context):
-        kwargs = dict((key, value.resolve(context)) for key, value in self.kwargs.iteritems() if key not in context)
+        kwargs = dict((key, value.resolve(context)) for key, value in _iteritems(self.kwargs) if key not in context)
         context.update(kwargs)
         try:
             return super(ExtendNode, self).render(context)
@@ -142,7 +155,7 @@ def menu_section(parser, token):
         kwargs[before] = after
     nodelist = parser.parse(('end_menu_section',))
     parser.delete_first_token()
-    kwargs = dict((key, parser.compile_filter(value)) for key, value in kwargs.iteritems())
+    kwargs = dict((key, parser.compile_filter(value)) for key, value in _iteritems(kwargs))
     return MenuSectionNode(nodelist, **kwargs)
 
 
@@ -176,7 +189,7 @@ def app_menu(parser, token):
         kwargs[before] = after
     nodelist = parser.parse(('end_app_menu',))
     parser.delete_first_token()
-    kwargs = dict((key, parser.compile_filter(value)) for key, value in kwargs.iteritems())
+    kwargs = dict((key, parser.compile_filter(value)) for key, value in _iteritems(kwargs))
     return AppMenuNode(nodelist, **kwargs)
 
 

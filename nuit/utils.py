@@ -2,18 +2,33 @@
 
 from django.core.exceptions import PermissionDenied
 
+
+def _closure(fn):
+    '''
+    Python 2 and Python 3 compatibility function
+    '''
+    try:
+        return fn.func_closure
+    except AttributeError:
+        return fn.__closure__
+
+
+def has_closure(fn):
+    return hasattr(fn, 'func_closure') or hasattr(fn, '__closure__')
+
+
 def get_callable_cells(function):
     '''
     Iterate through all of the decorators on this function,
     and put those that might be callable onto our callable stack.
     '''
     callables = []
-    if not hasattr(function, 'func_closure'):
+    if not has_closure(function):
         if hasattr(function, 'view_func'):
             return get_callable_cells(function.view_func)
-    if not function.func_closure:
+    if not _closure(function):
         return [function]
-    for closure in function.func_closure:
+    for closure in _closure(function):
         if hasattr(closure.cell_contents, '__call__'):
             # Class-based view does not have a .func_closure attribute.
             # Instead, we want to look for decorators on the dispatch method.
@@ -22,7 +37,7 @@ def get_callable_cells(function):
                 callables.extend(get_callable_cells(closure.cell_contents.dispatch.__func__))
                 if hasattr(closure.cell_contents, 'get'):
                     callables.extend(get_callable_cells(closure.cell_contents.get.__func__))
-            elif hasattr(closure.cell_contents, 'func_closure') and closure.cell_contents.func_closure:
+            elif has_closure(closure.cell_contents) and _closure(closure.cell_contents):
                 callables.extend(get_callable_cells(closure.cell_contents))
             else:
                 callables.append(closure.cell_contents)
@@ -32,8 +47,8 @@ def get_callable_cells(function):
 def get_class_based_views(callable_cells):
     '''Find class based views for a set of cells.'''
     for cell in callable_cells:
-        if hasattr(cell, 'func_closure') and cell.func_closure:
-            closure_dict = dict(zip(cell.func_code.co_freevars, cell.func_closure))
+        if has_closure(cell) and _closure(cell):
+            closure_dict = dict(zip(cell.func_code.co_freevars, _closure(cell)))
             if 'cls' in closure_dict:
                 klass = closure_dict['cls'].cell_contents
                 if hasattr(klass, 'dispatch'):

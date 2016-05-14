@@ -41,9 +41,9 @@ def get_callable_cells(function):
             # Class-based view does not have a .func_closure attribute.
             # Instead, we want to look for decorators on the dispatch method.
             # We can also look for decorators on a "get" method, if one exists.
-            if hasattr(closure.cell_contents, 'dispatch'):
+            if hasattr(closure.cell_contents, 'dispatch') and inspect.ismethod(closure.cell_contents.dispatch):
                 callables.extend(get_callable_cells(_func(closure.cell_contents.dispatch)))
-                if hasattr(closure.cell_contents, 'get'):
+                if hasattr(closure.cell_contents, 'get') and inspect.ismethod(closure.cell_contents.get):
                     callables.extend(get_callable_cells(_func(closure.cell_contents.get)))
             elif has_closure(closure.cell_contents) and _closure(closure.cell_contents):
                 callables.extend(get_callable_cells(closure.cell_contents))
